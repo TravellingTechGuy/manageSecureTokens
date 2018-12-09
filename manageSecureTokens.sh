@@ -133,6 +133,8 @@ addAdminUserPassword=$5
 				if [[ $userType = "Not admin" && $userToken = "true" && $adminToken = "false" ]]; then
 				echo "Houston we have a problem!"
 				#Here you could update an extension attribute (API CALL) to group problematic Macs in a smart group.
+				#The only workaround to fix this is to promote the end user to admin, leverage it to manipulate the tokens and demote it again.
+				#I tried it, it works and it does not harm the tokens.
 				exit 1
 				fi
 
