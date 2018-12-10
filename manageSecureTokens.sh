@@ -135,7 +135,17 @@ addAdminUserPassword=$5
 				#Here you could update an extension attribute (API CALL) to group problematic Macs in a smart group.
 				#The only workaround to fix this is to promote the end user to admin, leverage it to manipulate the tokens and demote it again.
 				#I tried it, it works and it does not harm the tokens.
-				exit 1
+				dscl . -append /groups/admin GroupMembership $userName
+				echo "End user promoted to admin!"
+
+				sysadminctl -adminUser $userName -adminPassword $userPass -secureTokenOn $addAdminUser -password $addAdminUserPassword
+				echo "End user admin token holder granted token to additional admin!"
+
+				diskutil apfs listcryptousers /
+
+				dscl . -delete /groups/admin GroupMembership $userName
+				echo "End user demoted back to standard!"	
+				#exit 1
 				fi
 
 # Here you could call a custom trigger to run a jamf Policy enabling FileVault
