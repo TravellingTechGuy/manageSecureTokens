@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Travelling Tech Guy - 7/12/18
+# Travelling Tech Guy - 7/12/18 - V1.0
 # Script created as proof of concept for blogpost https://travellingtechguy.eu/script-secure-tokens-mojave
 
 # The idea is to run this prior to enabling FileVault remotely.
@@ -9,6 +9,10 @@
 
 # Script below uses $4 and $5 to pass the "IT Admin" credentials, but I would recommend to have a look at the GitHub link below to add more security.
 # Encrypt Admin credentials passed via script in Jamf Pro: https://github.com/jamfit/Encrypted-Script-Parameters/blob/master/EncryptedStrings_Bash.sh
+
+# Flying Dutch Sysadmin - 23/01/19 - V1.2
+# Added Checks : - Check if an admin account exists, and if it does if it is admin , if not the script fixes it. 
+# Echo statements provided for troubleshooting.
 
 # AS ALWAYS: script provided AS IS. Mainly a proof of concept for the above blogpost. TEST and EVALUATE before using it in production.
 
@@ -23,6 +27,17 @@ addAdminUser=$4
 #add encryption
 addAdminUserPassword=$5
 
+# Check if the admin provided exists on the system
+		if [[ $("/usr/sbin/dseditgroup" -o checkmember -m $addAdminUser admin / 2>&1) =~ "Unable" ]]; then
+  		addAdminUserType="LiesItDoesNotExists"
+  		else
+  		addAdminUserType="AllGood"
+		fi
+			if [ "$addAdminUserType" = LiesItDoesNotExists ]; then 
+			echo "Admin user status: LIES! it did not exist go check the data" && exit 20      
+        else
+        echo "Admin user status: You where right! the account did exists"
+fi
 # Check if our admin has a Secure Token
 
   		if [[ $("/usr/sbin/sysadminctl" -secureTokenStatus "$addAdminUser" 2>&1) =~ "ENABLED" ]]; then
@@ -31,7 +46,21 @@ addAdminUserPassword=$5
     	adminToken="false"
     	fi
   		echo "Admin Token: $adminToken"
+# Check if $addAdminUser is actually an administrator
 
+		if [[ $("/usr/sbin/dseditgroup" -o checkmember -m $addAdminUser admin / 2>&1) =~ "yes" ]]; then
+  					AdminUserType="ItWasAdmin"
+  					else
+  					AdminUserType="LiesItWasNotAdmin"
+					fi
+                    echo "Admin Account Status: $AdminUserType"
+#Fixing the admin to make it admin		
+		if [ "$AdminUserType" = LiesItWasNotAdmin ]; then
+		dscl . -append /groups/admin GroupMembership $addAdminUser 
+        echo "Admin Promo status: It wasnt admin but now it is"
+		else
+        echo "Admin Promo status: No Action Needed "
+        fi
 # Check if FileVault is Enabled
 # I'm not using this variable in the rest of the script. Only added it in case you want to customise the script and enable FileVault at the end if 'fvStatus' is false
 		
